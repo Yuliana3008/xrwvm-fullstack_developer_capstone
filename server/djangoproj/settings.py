@@ -30,6 +30,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 CSRF_TRUSTED_ORIGINS = ['https://andreasanch2-8000.theianext-0-labs-prod-misc-tools-us-east-0.proxy.cognitiveclass.ai',
+ 'https://*.proxy.cognitiveclass.ai',
+    'https://*.cognitiveclass.ai',
+    'http://localhost',
+    'http://127.0.0.1',
 ]
 
 REST_FRAMEWORK = {
