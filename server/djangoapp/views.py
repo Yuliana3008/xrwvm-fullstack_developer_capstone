@@ -108,11 +108,19 @@ def get_dealer_reviews(request, dealer_id):
     if dealer_id:
         endpoint = "/fetchReviews/dealer/" + str(dealer_id)
         reviews = get_request(endpoint)
-        for review_detail in reviews:
-            response = analyze_review_sentiments(review_detail['review'])
-            print(response)
-            review_detail['sentiment'] = response['sentiment']
-        return JsonResponse({"status": 200, "reviews": reviews})
+        if isinstance(reviews, list):
+            for review_detail in reviews:
+                try:
+                    response = analyze_review_sentiments(review_detail.get('review', ''))
+                    if response and isinstance(response, dict) and 'sentiment' in response:
+                        review_detail['sentiment'] = response['sentiment']
+                    else:
+                        review_detail['sentiment'] = "neutral"
+                except Exception as e:
+                    logger.error(f"Error analizando sentimiento: {e}")
+                    review_detail['sentiment'] = "neutral"
+            return JsonResponse({"status": 200, "reviews": reviews})
+        return JsonResponse({"status": 200, "reviews": []})
     else:
         return JsonResponse({"status": 400, "message": "Bad Request"})
 
@@ -120,12 +128,13 @@ def get_dealer_reviews(request, dealer_id):
 # Publicar una reseña
 @csrf_exempt
 def add_review(request):
-    if request.user.is_anonymous == False:
-        data = json.loads(request.body)
+    if request.method == "POST":
         try:
+            data = json.loads(request.body)
             response = post_review(data)
             return JsonResponse({"status": 200})
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error posting review: {e}")
             return JsonResponse({"status": 401, "message": "Error in posting review"})
     else:
-        return JsonResponse({"status": 403, "message": "Unauthorized"})
+        return JsonResponse({"status": 400, "message": "Bad Request"})
